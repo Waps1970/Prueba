@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistencia Monitoristas Torre de Control</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        :root {
+            --rojo-er: #D32F2F; /* Rojo principal de Estrella Roja */
+            --azul-er: #1976D2; /* Azul corporativo complementario */
+            --blanco: #FFFFFF;
+            --gris-claro: #f0f2f5; /* Un fondo suave */
+            --gris-medio: #e0e0e0;
+            --gris-oscuro: #333333;
+            --texto-principal: #2c3e50;
+            --borde-radio: 8px;
+            --sombra-caja: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--gris-claro);
+            color: var(--texto-principal);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1.6;
+        }
+
+        .container {
+            background-color: var(--blanco);
+            padding: 25px 35px;
+            border-radius: var(--borde-radio);
+            box-shadow: var(--sombra-caja);
+            width: 100%;
+            max-width: 900px; /* Aumentado para mejor visualización de la tabla */
+            text-align: center;
+            border-top: 5px solid var(--rojo-er);
+        }
+
+        header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+        }
+
+        header img {
+            max-width: 160px; /* Un poco más grande */
+            margin-bottom: 15px;
+            border-radius: 4px; /* Pequeño redondeo si la imagen es cuadrada */
+        }
+
+        header h1 {
+            color: var(--azul-er);
+            margin: 0;
+            font-size: 2em; /* Más prominente */
+            font-weight: 700;
+        }
+
+        .form-registro, .info-actual, .reporte {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid var(--gris-medio);
+            border-radius: var(--borde-radio);
+            background-color: #fdfdfd; /* Ligeramente diferente al fondo general */
+            text-align: left; /* Alineación general a la izquierda para secciones */
+        }
+
+        h2 {
+            color: var(--rojo-er);
+            border-bottom: 2px solid var(--azul-er);
+            padding-bottom: 8px;
+            margin-top: 0; /* Evitar doble margen */
+            margin-bottom: 25px;
+            font-size: 1.5em;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: var(--azul-er);
+            font-size: 0.95em;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group select {
+            width: calc(100% - 24px); /* Considerar padding */
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group input[type="number"]:focus,
+        .form-group select:focus {
+            border-color: var(--azul-er);
+            box-shadow: 0 0 0 0.2rem rgba(25, 118, 210, 0.25); /* Sombra de foco azul */
+            outline: none;
+        }
+
+        button {
+            background-color: var(--rojo-er);
+            color: var(--blanco);
+            padding: 12px 28px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.05em;
+            font-weight: 500;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            margin: 8px 5px;
+            min-width: 180px; /* Ancho mínimo para botones */
+        }
+
+        button:hover {
+            background-color: #b71c1c; /* Rojo más oscuro al pasar el mouse */
+            transform: translateY(-1px);
+        }
+        button:active {
+            transform: translateY(0px);
+        }
+
+        button.secondary {
+            background-color: var(--azul-er);
+        }
+
+        button.secondary:hover {
+            background-color: #1565c0; /* Azul más oscuro */
+        }
+
+        #info-ubicacion, #info-hora {
+            font-weight: 500;
+            color: var(--gris-oscuro);
+            display: block; /* Para que ocupen su propia línea */
+            margin-top: 5px;
+        }
+        .info-actual p {
+            margin: 8px 0;
+            font-size: 1.05em;
+        }
+        .info-actual strong {
+            color: var(--azul-er);
+        }
+        .nota-geolocalizacion {
+            font-size: 0.8em;
+            color: #555;
+            margin-top: 5px;
+            display: block;
+        }
+
+
+        #tabla-reporte {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 0.85em; /* Ligeramente más pequeño para caber más datos */
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        #tabla-reporte th, #tabla-reporte td {
+            border: 1px solid var(--gris-medio);
+            padding: 10px 8px; /* Ajustar padding */
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        #tabla-reporte th {
+            background-color: var(--azul-er);
+            color: var(--blanco);
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        #tabla-reporte tbody tr:nth-child(even) {
+            background-color: #e9f2fa; /* Azul muy claro para filas pares */
+        }
+        #tabla-reporte tbody tr:hover {
+            background-color: #d1e3f5; /* Resaltado al pasar el mouse */
+        }
+
+
+        #mensaje {
+            margin-top: 20px;
+            font-weight: 500;
+            padding: 12px;
+            border-radius: var(--borde-radio);
+            text-align: center; /* Centrar texto del mensaje */
+            font-size: 0.95em;
+        }
+
+        .mensaje-exito {
+            color: #155724;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+
+        .mensaje-error {
+            color: #721c24;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+         
+        #reporte-container {
+            padding: 15px;
+            background-color: var(--blanco);
+            border-radius: var(--borde-radio);
+            margin-top: 15px;
+        }
+        #titulo-reporte {
+            color: var(--azul-er);
+            font-size: 1.3em;
+            margin-bottom: 15px;
+        }
+
+        .botones-reporte {
+            margin-top: 15px;
+            display: flex;
+            flex-wrap: wrap; /* Para que los botones se ajusten en pantallas pequeñas */
+            justify-content: center; /* Centrar botones */
+            gap: 10px; /* Espacio entre botones */
+        }
+        
+        /* Estilos para el selector de periodo */
+        #selectorPeriodo {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 1em;
+            margin-right: 10px; /* Espacio antes del botón */
+            min-width: 250px; /* Ancho mínimo */
+        }
+
+        /* Fallback para el logo si no carga */
+        .logo-fallback {
+            display: inline-block;
+            padding: 20px;
+            border: 2px dashed var(--rojo-er);
+            color: var(--rojo-er);
+            font-weight: bold;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 20px 15px;
+            }
+            header h1 {
+                font-size: 1.6em;
+            }
+            h2 {
+                font-size: 1.3em;
+            }
+            button {
+                padding: 10px 20px;
+                font-size: 0.95em;
+                width: 100%; /* Botones ocupan todo el ancho */
+                margin-bottom: 10px;
+            }
+            .botones-reporte button {
+                 width: calc(50% - 10px); /* Dos botones por fila en móvil */
+            }
+            .botones-reporte button:last-child:nth-child(odd) { /* Si es el último y es impar */
+                width: 100%;
+            }
+            #tabla-reporte {
+                font-size: 0.75em; /* Aún más pequeño en móviles */
+            }
+            #tabla-reporte th, #tabla-reporte td {
+                padding: 6px 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <img id="logoER" src="https://scontent-dfw5-1.xx.fbcdn.net/v/t39.30808-6/350838029_1417537099034726_6961679260564905215_n.jpg?_nc_cat=101&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=bZ9yVjBrrP0Q7kNvwFFKPxU&_nc_oc=AdlMqzIJFWRaeVvkszIoGSiIRls5trRZFCDoqsZje337-f33b1a4C3pvyTisdBQ00-8&_nc_zt=23&_nc_ht=scontent-dfw5-1.xx&_nc_gid=fzy8ct40MJdu0IdtddOo4w&oh=00_AfKP9De8QUCpNjSlHpOdavu7w-sBNTKNW_E0QVzYYMnhjg&oe=68380BBB" 
+                 alt="Logo Estrella Roja"
+                 onerror="this.style.display='none'; document.getElementById('logoFallbackText').style.display='block';">
+            <div id="logoFallbackText" class="logo-fallback" style="display:none;">Logo Estrella Roja no disponible</div>
+            <h1>Asistencia Monitoristas de Torre de Control</h1>
+        </header>
+
+        <section class="form-registro">
+            <h2>Registro de Asistencia</h2>
+            <form id="formAsistencia">
+                <div class="form-group">
+                    <label for="numEmpleado">Número de Empleado:</label>
+                    <input type="number" id="numEmpleado" required placeholder="Ej: 12345">
+                </div>
+                <div class="form-group">
+                    <label for="nombre">Nombre Completo:</label>
+                    <input type="text" id="nombre" required placeholder="Ej: Juan Pérez López">
+                </div>
+                <div class="form-group">
+                    <label for="planta">Planta:</label>
+                    <select id="planta" required>
+                        <option value="">Seleccione una planta...</option>
+                        <option value="CAPU">CAPU</option>
+                        <option value="4 Poniente">4 Poniente</option>
+                        <option value="San Martín">San Martín</option>
+                        <option value="Huejotzingo">Huejotzingo</option>
+                        <option value="Aeropuerto T1">Aeropuerto T1</option>
+                        <option value="Aeropuerto T2">Aeropuerto T2</option>
+                        <option value="Oficinas">Oficinas Centrales</option>
+                        <option value="Taller">Taller</option>
+                        <option value="Otro">Otro (Especificar)</option>
+                    </select>
+                </div>
+                <div style="text-align:center;">
+                    <button type="button" onclick="registrar('entrada')">Registrar Entrada</button>
+                    <button type="button" onclick="registrar('salida')" class="secondary">Registrar Salida</button>
+                </div>
+            </form>
+            <div id="mensaje"></div>
+        </section>
+
+        <section class="info-actual">
+            <h2>Información Actual del Registro</h2>
+            <p><strong>Hora de Registro:</strong> <span id="info-hora">--:--:--</span></p>
+            <p><strong>Ubicación Geográfica:</strong> <span id="info-ubicacion">Obteniendo...</span>
+               <span class="nota-geolocalizacion">Nota: La geolocalización puede estar restringida si esta página se ejecuta en un entorno limitado (iframe). Para una funcionalidad completa, abra el archivo HTML directamente en su navegador.</span>
+            </p>
+        </section>
+
+        <section class="reporte">
+            <h2>Reporte Quincenal de Asistencia</h2>
+            <div class="form-group" style="display: flex; align-items: center; flex-wrap: wrap;">
+                <label for="selectorPeriodo" style="margin-right: 10px; margin-bottom: 0;">Seleccione Periodo:</label>
+                <select id="selectorPeriodo"></select>
+            </div>
+            <div class="botones-reporte">
+                <button type="button" onclick="generarReporte()">Ver Reporte en Tabla</button>
+                <button type="button" onclick="descargarPDF()" class="secondary">Descargar como PDF</button>
+                <button type="button" onclick="enviarCorreo()">Preparar Envío por Correo</button>
+            </div>
+            
+            <div id="reporte-container">
+                <h3 id="titulo-reporte"></h3>
+                <div style="overflow-x: auto;"> <table id="tabla-reporte">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Día</th>
+                                <th>No. Empleado</th>
+                                <th>Nombre Completo</th>
+                                <th>Planta</th>
+                                <th>Hora Entrada</th>
+                                <th>Ubic. Entrada</th>
+                                <th>Hora Salida</th>
+                                <th>Ubic. Salida</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Se utiliza window.jspdf para asegurar que el objeto jsPDF esté disponible globalmente.
+        const { jsPDF } = window.jspdf;
+
+        // --- Configuración Global ---
+        const FECHA_INICIO_CICLOS_REPORTES = new Date('2025-05-26T00:00:00'); // Lunes 26 de Mayo 2025
+        const DIAS_POR_PERIODO_REPORTE = 14;
+        const CORREOS_ELECTRONICOS_DESTINO = "mauricio.escartin@estrellaroja.com.mx,lauro.conde@estrellaroja.com.mx";
+        const NOMBRE_APP_STORAGE = 'asistenciaMonitoristasER';
+
+        // --- Referencias a Elementos del DOM ---
+        const numEmpleadoInput = document.getElementById('numEmpleado');
+        const nombreInput = document.getElementById('nombre');
+        const plantaInput = document.getElementById('planta');
+        const infoHoraSpan = document.getElementById('info-hora');
+        const infoUbicacionSpan = document.getElementById('info-ubicacion');
+        const mensajeDiv = document.getElementById('mensaje');
+        const tablaReporteBody = document.getElementById('tabla-reporte').getElementsByTagName('tbody')[0];
+        const selectorPeriodoDropdown = document.getElementById('selectorPeriodo');
+        const tituloReporteH3 = document.getElementById('titulo-reporte');
+
+        let ubicacionGeograficaActual = "No disponible";
+
+        // --- Funciones Principales ---
+
+        /**
+         * Obtiene la ubicación geográfica actual del usuario.
+         * Actualiza la UI y la variable global 'ubicacionGeograficaActual'.
+         */
+        function obtenerUbicacionGeografica() {
+            infoUbicacionSpan.textContent = "Intentando obtener ubicación...";
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        ubicacionGeograficaActual = `${lat.toFixed(5)}, ${lon.toFixed(5)}`; // Más precisión
+                        infoUbicacionSpan.textContent = ubicacionGeograficaActual + " (Precisión: " + position.coords.accuracy.toFixed(0) + "m)";
+                    },
+                    (error) => {
+                        let errorMsg = "Error al obtener ubicación: ";
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED: 
+                                errorMsg += "Permiso denegado por el usuario."; 
+                                if (error.message && error.message.toLowerCase().includes("permissions policy")) {
+                                    errorMsg += " La política de permisos de este documento podría estar bloqueando la geolocalización (común en iframes restringidos).";
+                                }
+                                break;
+                            case error.POSITION_UNAVAILABLE: errorMsg += "Información de ubicación no disponible."; break;
+                            case error.TIMEOUT: errorMsg += "Tiempo de espera agotado al solicitar ubicación."; break;
+                            default: errorMsg += "Error desconocido (" + error.code + ")."; break;
+                        }
+                        // Verificación adicional por mensaje de error específico de política de permisos
+                        if (error.message && error.message.toLowerCase().includes("permissions policy") && error.code !== error.PERMISSION_DENIED) {
+                             errorMsg += " Adicionalmente, la política de permisos de este documento podría estar bloqueando la geolocalización (común en iframes restringidos).";
+                        }
+                        
+                        ubicacionGeograficaActual = "Error al obtener";
+                        infoUbicacionSpan.textContent = errorMsg;
+                        console.error("Error de geolocalización:", error.message, error.code);
+                    },
+                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 } // Ajustes para mejor respuesta
+                );
+            } else {
+                ubicacionGeograficaActual = "Geolocalización no soportada";
+                infoUbicacionSpan.textContent = "Geolocalización no es soportada por este navegador.";
+            }
+        }
+
+        /**
+         * Actualiza la hora mostrada en la interfaz cada segundo.
+         */
+        function iniciarActualizacionHora() {
+            const actualizar = () => {
+                const now = new Date();
+                infoHoraSpan.textContent = now.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            };
+            actualizar(); // Llamada inicial
+            setInterval(actualizar, 1000);
+        }
+
+        /**
+         * Muestra un mensaje temporal (feedback) en la interfaz.
+         * @param {string} texto - El mensaje a mostrar.
+         * @param {boolean} esExito - True si es un mensaje de éxito, false si es de error.
+         */
+        function mostrarMensajeFeedback(texto, esExito = true) {
+            mensajeDiv.innerHTML = texto; // Usar innerHTML por si se incluye algún enlace
+            mensajeDiv.className = esExito ? 'mensaje-exito' : 'mensaje-error';
+            mensajeDiv.style.display = 'block'; // Asegurar que sea visible
+            setTimeout(() => {
+                mensajeDiv.textContent = '';
+                mensajeDiv.style.display = 'none'; // Ocultar en lugar de solo limpiar clase
+            }, 7000); // Mensaje visible por 7 segundos
+        }
+
+        /**
+         * Obtiene los registros de asistencia desde LocalStorage.
+         * @returns {Array} - Un array de objetos de registro.
+         */
+        function obtenerRegistrosDeStorage() {
+            const registrosJSON = localStorage.getItem(NOMBRE_APP_STORAGE);
+            try {
+                return registrosJSON ? JSON.parse(registrosJSON) : [];
+            } catch (e) {
+                console.error("Error al parsear registros de localStorage:", e);
+                return []; // Retornar array vacío en caso de error
+            }
+        }
+
+        /**
+         * Guarda los registros de asistencia en LocalStorage.
+         * @param {Array} registros - El array de objetos de registro a guardar.
+         */
+        function guardarRegistrosEnStorage(registros) {
+            localStorage.setItem(NOMBRE_APP_STORAGE, JSON.stringify(registros));
+        }
+
+        /**
+         * Registra una entrada o salida para un empleado.
+         * @param {string} tipoRegistro - 'entrada' o 'salida'.
+         */
+        function registrar(tipoRegistro) {
+            const numEmpleado = numEmpleadoInput.value.trim();
+            const nombre = nombreInput.value.trim();
+            const planta = plantaInput.value; // El select ya asegura un valor si es required
+
+            if (!numEmpleado || !nombre || !planta) {
+                mostrarMensajeFeedback("Por favor, complete todos los campos: Número de Empleado, Nombre y Planta.", false);
+                return;
+            }
+
+            // Volver a intentar obtener ubicación si no está disponible o es errónea, o si es el mensaje por defecto
+            if (ubicacionGeograficaActual === "No disponible" || ubicacionGeograficaActual.includes("Error") || ubicacionGeograficaActual === "Intentando obtener ubicación...") {
+                 mostrarMensajeFeedback("Intentando obtener ubicación antes de registrar. Por favor, espere y asegúrese de haber concedido permisos...", false);
+                 obtenerUbicacionGeografica(); // Intenta de nuevo
+                 // No se reintenta automáticamente el registro aquí para evitar bucles, el usuario deberá reintentar el registro.
+                 // Se podría añadir un pequeño delay y reintentar si se desea, pero puede ser confuso.
+                 return;
+            }
+
+
+            const ahora = new Date();
+            const fechaISO = ahora.toISOString().split('T')[0]; // Form
